@@ -1,0 +1,176 @@
+import Foundation
+
+class Session {
+    let durationInSeconds: Int
+    
+    init(durationInSeconds:Int){
+        self.durationInSeconds=durationInSeconds
+    }
+}
+
+protocol SessionManagerDelegate{
+    func showSessionStarted()
+    func showTimeLeft(secondsLeft: Int)
+    func showSessionEnded()
+    func showSessionCancelled()
+          }
+
+class SessionManager{
+    var sessionDelegate:SessionManagerDelegate
+    var timer:Timer?
+    let sessionStorage=SessionsStorage()
+    
+    init(sessionDelegate: SessionManagerDelegate){
+        self.sessionDelegate=sessionDelegate
+    }
+    
+    func startSession(session:Session){
+        sessionDelegate.showSessionStarted()
+        sessionDelegate.showTimeLeft(secondsLeft:session.durationInSeconds)
+        
+        var secondsLeft=session.durationInSeconds
+        timer=Timer.scheduledTimer(withTimeInterval: 1, repeats: true)  { _ in
+            secondsLeft-=1
+            self.sessionDelegate.showTimeLeft(secondsLeft:secondsLeft)
+            
+            if secondsLeft==0{
+                SessionsStorage.shared.add(session:session)
+                self.sessionDelegate.showSessionEnded()
+                
+                self.timer?.invalidate()
+                self.timer=nil
+            }
+             
+        }
+}
+    func CancellSession( ){
+         
+        self.sessionDelegate.showSessionEnded()
+        self.timer?.invalidate()
+        self.timer=nil
+
+    }
+}
+
+
+class SessionsStorage{
+    static let shared=SessionsStorage()
+    
+    var sessions=[Session]()
+    
+    func add(session:Session){
+        sessions.append(session)
+    }
+}
+
+class SessionView: SessionManagerDelegate{
+    var sessionManager: SessionManager?
+    
+    func userDidStartSession(durationInSeconds:Int){
+        sessionManager?.startSession(session: Session(durationInSeconds:durationInSeconds))
+    }
+    
+    func showSessionStarted() {
+        print("session started")
+    }
+    
+    func showTimeLeft(secondsLeft:Int){
+        print("\(secondsLeft)")
+    }
+    
+    func showSessionEnded() {
+        print("sesion ended")
+     
+    }
+    func showSessionCancelled(){
+        sessionManager?.CancellSession()    }
+    
+}
+
+class Break {
+    let durationInSeconds: Int
+    
+    init(durationInSeconds:Int){
+        self.durationInSeconds=durationInSeconds
+    }
+}
+
+protocol BreakManagerDelegate{
+func showBreakStarted()
+func showTimeLeft(secondsLeft: Int)
+func showBreakEnded()
+}
+
+class BreakManager{
+    var breakDelegate:BreakManagerDelegate
+    var timer:Timer?
+    
+    
+    init(breakDelegate: BreakManagerDelegate){
+        self.breakDelegate=breakDelegate
+    }
+    
+    func startBreak(theBreak:Break){
+        breakDelegate.showBreakStarted()
+        breakDelegate.showTimeLeft(secondsLeft:theBreak.durationInSeconds)
+        
+        var secondsLeft=theBreak.durationInSeconds
+        timer=Timer.scheduledTimer(withTimeInterval: 1, repeats: true)  { _ in
+            secondsLeft-=1
+            self.breakDelegate.showTimeLeft(secondsLeft:secondsLeft)
+            
+            if secondsLeft==0{
+                 
+                self.breakDelegate.showBreakEnded()
+                
+                self.timer?.invalidate()
+                self.timer=nil
+            }
+             
+        }
+}
+     
+}
+
+class BreakView: BreakManagerDelegate{
+    var breakManager: BreakManager?
+    
+    func userDidStartBreak(durationInSeconds:Int){
+        breakManager?.startBreak(theBreak: Break(durationInSeconds:durationInSeconds))
+    }
+    
+    func showBreakStarted() {
+        print("break started")
+    }
+    
+    func showTimeLeft(secondsLeft:Int){
+        print("\(secondsLeft)")
+    }
+    
+    func showBreakEnded() {
+        print("break ended")
+     
+    }
+     
+    
+}
+
+let sessionView = SessionView()
+
+ 
+
+//sessionView.sessionManager = SessionManager(sessionDelegate: sessionView)
+
+//sessionView.userDidStartSession(durationInSeconds: 10)
+
+//DispatchQueue.main.asyncAfter(deadline: DispatchTime.now() + .seconds(3)) {
+   // sessionView.showSessionCancelled()
+//}
+
+let breakView = BreakView()
+
+breakView.breakManager = BreakManager(breakDelegate: breakView)
+
+breakView.userDidStartBreak(durationInSeconds: 5)
+
+ 
